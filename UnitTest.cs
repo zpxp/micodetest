@@ -26,7 +26,7 @@ namespace micodetest
 			catch (TaskCanceledException e)
 			{
 				// task should be cancelled
-				Assert.Equal("Timeout", e.Message);
+				Assert.True(true);
 			}
 		}
 
@@ -44,6 +44,23 @@ namespace micodetest
 			{
 				// task should not be cancelled
 				Assert.Equal("Task was cancelled", "Task should not cancelled");
+			}
+		}
+
+		[Fact]
+		public async Task TestCancel()
+		{
+			using var cts = new CancellationTokenSource(2);
+			try
+			{
+				await Task.Delay(5000).ConfigureAwait(false, cts.Token, Timeout.InfiniteTimeSpan);
+				// it should not get here
+				Assert.Equal("Task cancelled", "Task was not cancelled");
+			}
+			catch (TaskCanceledException e)
+			{
+				// task should be cancelled
+				Assert.True(true);
 			}
 		}
 
@@ -77,7 +94,7 @@ namespace micodetest
 			catch (TaskCanceledException e)
 			{
 				// task should be cancelled
-				Assert.Equal("Timeout", e.Message);
+				Assert.True(true);
 			}
 		}
 
