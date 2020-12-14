@@ -17,7 +17,6 @@ namespace micodetest
 			// merge our token with the arg token that will be cancelled if either of the other 2 tokens get cancelled
 			var link = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, token);
 			var cancelableTask = Task.Factory.StartNew(
-				// we have to await inside the lambda otherwise the func would just return immediately
 				async (_t) =>
 				{
 					var args = (object[])_t;
@@ -59,7 +58,6 @@ namespace micodetest
 			// merge our token with the arg token that will be cancelled if either of the other 2 tokens get cancelled
 			var link = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, token);
 			var cancelableTask = Task.Factory.StartNew(
-				// we have to await inside the lambda otherwise the func would just return immediately
 				async (_t) =>
 				{
 					var args = (object[])_t;
