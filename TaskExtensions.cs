@@ -29,7 +29,7 @@ namespace micodetest
 					var tcs = new TaskCompletionSource<bool>();
 					using (link.Token.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
 					{
-						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
+						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(continueOnCapturedContext))
 						{
 							throw new TaskCanceledException("Timeout");
 						}
@@ -70,7 +70,7 @@ namespace micodetest
 					var tcs = new TaskCompletionSource<bool>();
 					using (link.Token.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
 					{
-						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
+						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(continueOnCapturedContext))
 						{
 							throw new TaskCanceledException("Timeout");
 						}
