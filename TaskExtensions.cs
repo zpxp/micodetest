@@ -31,7 +31,7 @@ namespace micodetest
 					{
 						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(continueOnCapturedContext))
 						{
-							throw new TaskCanceledException("Timeout");
+							throw new TaskCanceledException();
 						}
 						await task; // now we wait on the operation
 					}
@@ -72,7 +72,7 @@ namespace micodetest
 					{
 						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(continueOnCapturedContext))
 						{
-							throw new TaskCanceledException("Timeout");
+							throw new TaskCanceledException();
 						}
 						return await task; // now we wait on the operation
 					}
