@@ -9,84 +9,61 @@ namespace micodetest
 	{
 		public static ConfiguredTaskAwaitable ConfigureAwait(this Task task, bool continueOnCapturedContext, CancellationToken token, TimeSpan timeout)
 		{
-			var cts = new CancellationTokenSource();
-			if (timeout != Timeout.InfiniteTimeSpan)
-			{
-				cts.CancelAfter(timeout);
-			}
+			var cts = new CancellationTokenSource(timeout);
 			// merge our token with the arg token that will be cancelled if either of the other 2 tokens get cancelled
 			var link = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, token);
-			var cancelableTask = Task.Factory.StartNew(
-				async (_t) =>
-				{
-					var args = (object[])_t;
-					var task = (Task)args[0];
-					using var link = (CancellationTokenSource)args[1];
-					// we pass in cts so we can dispose it after the async operation
-					// we dont actually need cts for anythign here
-					using var cts = (CancellationTokenSource)args[2];
 
-					var tcs = new TaskCompletionSource<bool>();
-					using (link.Token.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
-					{
-						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(continueOnCapturedContext))
-						{
-							throw new TaskCanceledException();
-						}
-						await task; // now we wait on the operation
-					}
-				},
-				// we pass in vars as state to prevent closure (more speed)
-				new object[] { task, link, cts },
-				// pass in our token with timeout 
-				link.Token,
-				TaskCreationOptions.DenyChildAttach,
-				TaskScheduler.Default)
-				// it returns Task<Task> so call this to flatten it
-				.Unwrap();
-
-			return cancelableTask.ConfigureAwait(continueOnCapturedContext);
+			return WithCancellation(link, cts, task).ConfigureAwait(continueOnCapturedContext);
 		}
 
 		public static ConfiguredTaskAwaitable<TResult> ConfigureAwait<TResult>(this Task<TResult> task, bool continueOnCapturedContext, CancellationToken token, TimeSpan timeout)
 		{
-			var cts = new CancellationTokenSource();
-			if (timeout != Timeout.InfiniteTimeSpan)
-			{
-				cts.CancelAfter(timeout);
-			}
+			var cts = new CancellationTokenSource(timeout);
 			// merge our token with the arg token that will be cancelled if either of the other 2 tokens get cancelled
 			var link = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, token);
-			var cancelableTask = Task.Factory.StartNew(
-				async (_t) =>
+
+			return WithCancellation(link, cts, task).ConfigureAwait(continueOnCapturedContext);
+		}
+
+
+		private static async Task WithCancellation(CancellationTokenSource link, CancellationTokenSource cts, Task task)
+		{
+			// we need to dispose these 2 cts after the operation completes
+			using (cts)
+			using (link)
+			{
+				var tcs = new TaskCompletionSource<bool>();
+				using (link.Token.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
 				{
-					var args = (object[])_t;
-					var task = (Task<TResult>)args[0];
-					using var link = (CancellationTokenSource)args[1];
-					// we pass in cts so we can dispose it after the async operation
-					// we dont actually need cts for anythign here
-					using var cts = (CancellationTokenSource)args[2];
-
-					var tcs = new TaskCompletionSource<bool>();
-					using (link.Token.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
+					// if the given task completes then this function will exit
+					// otherwise if the tcs task completes then it was cancelled and we throw
+					if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
 					{
-						if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(continueOnCapturedContext))
-						{
-							throw new TaskCanceledException();
-						}
-						return await task; // now we wait on the operation
+						throw new OperationCanceledException(link.Token);
 					}
-				},
-				// we pass in vars as state to prevent closure (more speed)
-				new object[] { task, link, cts },
-				// pass in our token with timeout 
-				link.Token,
-				TaskCreationOptions.DenyChildAttach,
-				TaskScheduler.Default)
-				// it returns Task<Task> so call this to flatten it
-				.Unwrap();
+				}
+			}
+		}
 
-			return cancelableTask.ConfigureAwait(continueOnCapturedContext);
+
+		// there isnt any simple way to reuse this WithCancellation for both the generic and non generic variants without 
+		// unnecessary boxing or creating a proxy task and waiting on that. so we have a generic and non generic impl
+		private static async Task<T> WithCancellation<T>(CancellationTokenSource link, CancellationTokenSource cts, Task<T> task)
+		{
+			// we need to dispose these 2 cts after the operation completes
+			using (cts)
+			using (link)
+			{
+				var tcs = new TaskCompletionSource<bool>();
+				using (link.Token.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
+				{
+					if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
+					{
+						throw new OperationCanceledException(link.Token);
+					}
+					return await task.ConfigureAwait(false); // return the result of the task
+				}
+			}
 		}
 	}
 }

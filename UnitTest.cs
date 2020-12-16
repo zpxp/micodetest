@@ -23,10 +23,10 @@ namespace micodetest
 				// it should not get here
 				Assert.Equal("Task cancelled", "Task was not cancelled");
 			}
-			catch (TaskCanceledException e)
+			catch (OperationCanceledException e)
 			{
 				// task should be cancelled
-				Assert.True(true);
+				Assert.NotNull(e.CancellationToken);
 			}
 		}
 
@@ -40,7 +40,7 @@ namespace micodetest
 				// it should get here
 				Assert.True(true);
 			}
-			catch (TaskCanceledException)
+			catch (OperationCanceledException)
 			{
 				// task should not be cancelled
 				Assert.Equal("Task was cancelled", "Task should not cancelled");
@@ -57,10 +57,10 @@ namespace micodetest
 				// it should not get here
 				Assert.Equal("Task cancelled", "Task was not cancelled");
 			}
-			catch (TaskCanceledException e)
+			catch (OperationCanceledException e)
 			{
 				// task should be cancelled
-				Assert.True(true);
+				Assert.NotNull(e.CancellationToken);
 			}
 		}
 
@@ -74,7 +74,7 @@ namespace micodetest
 				// it should get here
 				Assert.True(true);
 			}
-			catch (TaskCanceledException)
+			catch (OperationCanceledException)
 			{
 				// task should not be cancelled
 				Assert.Equal("Task was cancelled", "Task should not cancelled");
@@ -91,10 +91,10 @@ namespace micodetest
 				// it should not get here
 				Assert.Equal("Task cancelled", "Task was not cancelled");
 			}
-			catch (TaskCanceledException e)
+			catch (OperationCanceledException e)
 			{
 				// task should be cancelled
-				Assert.True(true);
+				Assert.NotNull(e.CancellationToken);
 			}
 		}
 
@@ -108,7 +108,7 @@ namespace micodetest
 				// it should get here
 				Assert.Equal(6, result);
 			}
-			catch (TaskCanceledException)
+			catch (OperationCanceledException)
 			{
 				// task should not be cancelled
 				Assert.Equal("Task was cancelled", "Task should not cancelled");
@@ -125,7 +125,7 @@ namespace micodetest
 				// it should get here
 				Assert.Equal(6, result);
 			}
-			catch (TaskCanceledException)
+			catch (OperationCanceledException)
 			{
 				// task should not be cancelled
 				Assert.Equal("Task was cancelled", "Task should not cancelled");
